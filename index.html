@@ -27,6 +27,7 @@
         th { background-color: #edf2f7; color: #2d3748; font-weight: 600; }
         .soap-tag { display: inline-block; width: 18px; font-weight: bold; color: #2b6cb0; }
         
+        .btn-revisit { background-color: #38a169; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-bottom: 4px; }
         .btn-edit { background-color: #3182ce; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-bottom: 4px; }
         .btn-del { background-color: #e53e3e; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; }
         .vital-badge { background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 4px; display: inline-block; margin-bottom: 2px; }
@@ -43,6 +44,14 @@
         <input type="text" id="species" placeholder="품종 (예: 토끼, 고양이)">
         <input type="text" id="weight" placeholder="체중 (kg)">
         <input type="text" id="temp" placeholder="체온 (°C)">
+    </div>
+
+    <!-- ⚡ 원클릭 퀵 처방 버튼 -->
+    <div class="section-title" style="margin-top: 15px; color: #28a745;">⚡ 원클릭 퀵 처방 (자주 쓰는 세트)</div>
+    <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+        <button type="button" onclick="quickPrescribe('[지사제 세트] 광범위항생제 + 정장제 SID')" style="flex:1; padding:10px; background:#38a169; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:13px;">💊 설사/장염 세트</button>
+        <button type="button" onclick="quickPrescribe('[외이도염 세트] 이도세척제 + 항생제 점이액 BID')" style="flex:1; padding:10px; background:#3182ce; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:13px;">👂 귀 염증 세트</button>
+        <button type="button" onclick="quickPrescribe('[종합백신 세트] DHPPi + 피하주사')" style="flex:1; padding:10px; background:#d69e2e; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:13px;">💉 종합백신 세트</button>
     </div>
 
     <div class="section-title">📋 SOAP 진료 기록</div>
@@ -66,7 +75,7 @@
     </div>
 
     <div class="btn-group">
-        <button class="btn-submit" id="btnSave" onclick="saveRecord()">차트 저장</button>
+        <button class="btn-submit" id="btnSave" onclick="saveRecord()">신규 차트 저장 (새로운 방문)</button>
         <button class="btn-cancel" id="btnCancel" onclick="cancelEdit()">취소</button>
     </div>
 
@@ -139,6 +148,7 @@
                         <div><span class="soap-tag">P:</span> ${row.plan || '-'}</div>
                     </td>
                     <td>
+                        <button class="btn-revisit" onclick="setRevisit('${row.patient_name || ''}', '${row.species || ''}')">재진작성</button><br>
                         <button class="btn-edit" onclick="startEdit(${row.id})">수정</button><br>
                         <button class="btn-del" onclick="deleteRecord(${row.id})">삭제</button>
                     </td>
@@ -155,11 +165,35 @@
         fetchRecords();
     }
 
+    // ⚡ 재진 환자 선택 시 이름/품종 세팅 + [S] 필드에 자동 포커스(커서 깜박임)
+    function setRevisit(patientName, species) {
+        editTargetId = null; 
+        document.getElementById('patientName').value = patientName;
+        document.getElementById('species').value = species;
+        document.getElementById('weight').value = '';
+        document.getElementById('temp').value = '';
+        document.getElementById('subjective').value = '';
+        document.getElementById('objective').value = '';
+        document.getElementById('assessment').value = '';
+        document.getElementById('plan').value = '';
+
+        document.getElementById('btnSave').innerText = '신규 차트 저장 (새로운 방문)';
+        document.getElementById('btnSave').style.backgroundColor = '#2b6cb0';
+        document.getElementById('btnCancel').style.display = 'none';
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // S(Subjective) 입력창으로 커서 이동
+        setTimeout(() => {
+            document.getElementById('subjective').focus();
+        }, 200);
+    }
+
     function startEdit(id) {
         const target = recordsData.find(r => r.id === id);
         if (!target) return;
 
-        editTargetId = id;
+        editTargetId = id; 
         document.getElementById('patientName').value = target.patient_name || '';
         document.getElementById('species').value = target.species || '';
         document.getElementById('weight').value = target.weight || '';
@@ -169,17 +203,22 @@
         document.getElementById('assessment').value = target.assessment || '';
         document.getElementById('plan').value = target.plan || '';
 
-        document.getElementById('btnSave').innerText = '차트 수정 완료';
-        document.getElementById('btnSave').style.backgroundColor = '#2b6cb0';
+        document.getElementById('btnSave').innerText = '기존 차트 수정 완료';
+        document.getElementById('btnSave').style.backgroundColor = '#d69e2e';
         document.getElementById('btnCancel').style.display = 'block';
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        setTimeout(() => {
+            document.getElementById('subjective').focus();
+        }, 200);
     }
 
     function cancelEdit() {
         editTargetId = null;
         clearInputs();
-        document.getElementById('btnSave').innerText = '차트 저장';
+        document.getElementById('btnSave').innerText = '신규 차트 저장 (새로운 방문)';
+        document.getElementById('btnSave').style.backgroundColor = '#2b6cb0';
         document.getElementById('btnCancel').style.display = 'none';
     }
 
@@ -192,6 +231,15 @@
         document.getElementById('objective').value = '';
         document.getElementById('assessment').value = '';
         document.getElementById('plan').value = '';
+    }
+
+    function quickPrescribe(text) {
+        const planField = document.getElementById('plan');
+        if (planField.value) {
+            planField.value += '\n' + text;
+        } else {
+            planField.value = text;
+        }
     }
 
     async function saveRecord() {
