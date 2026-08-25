@@ -5,91 +5,370 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>동물병원 전문 EMR 차트 관리</title>
     <style>
-        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f0f2f5; margin: 0; padding: 30px; }
-        .container { max-width: 900px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
-        h2 { text-align: center; color: #1a365d; margin-bottom: 20px; }
-        .section-title { font-weight: bold; color: #2b6cb0; margin-bottom: 8px; font-size: 14px; }
-        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-        .grid-soap { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        input[type="text"], textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; box-sizing: border-box; font-size: 13px; }
-        textarea { height: 70px; resize: vertical; }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        h2 { text-align: center; color: #1a365d; margin-top: 0; margin-bottom: 15px; }
+        .section-title { font-weight: bold; color: #2b6cb0; margin-bottom: 6px; font-size: 13px; }
         
-        .btn-group { display: flex; gap: 10px; }
-        button.btn-submit { flex: 1; padding: 12px; background-color: #2b6cb0; color: white; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; }
-        button.btn-submit:hover { background-color: #2c5282; }
-        button.btn-cancel { width: 120px; padding: 12px; background-color: #718096; color: white; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; display: none; }
+        /* 환자 기본정보 영역 컨테이너 */
+        .patient-info-box { background: #f8fafc; border: 1.5px solid #cbd5e0; border-radius: 8px; padding: 12px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px; }
+        .grid-info { display: grid; grid-template-columns: 1.2fr 1.3fr 1.4fr 0.8fr 0.8fr; gap: 10px; }
+        
+        /* ߒᠭ∬Ⅰ영역 및 1초 퀵선택 버튼 스타일 */
+        .species-container { display: flex; flex-direction: column; gap: 4px; }
+        .species-quick-btns { display: flex; gap: 2px; flex-wrap: wrap; }
+        .q-btn { background: #edf2f7; border: 1px solid #cbd5e0; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer; color: #2d3748; font-weight: 500; }
+        .q-btn:hover { background: #e2e8f0; border-color: #a0aec0; }
+        .q-btn.dog { background: #ebf8ff; color: #2b6cb0; border-color: #bee3f8; }
+        .q-btn.cat { background: #fffaf0; color: #dd6b20; border-color: #feebc8; }
 
-        .search-box { margin-top: 25px; margin-bottom: 15px; display: flex; gap: 8px; }
-        .search-box input { flex: 1; }
-        .search-box button { padding: 0 16px; background-color: #4a5568; color: white; border: none; border-radius: 6px; cursor: pointer; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 10px; text-align: center; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
-        th { background-color: #edf2f7; color: #2d3748; font-weight: 600; }
-        .soap-tag { display: inline-block; width: 18px; font-weight: bold; color: #2b6cb0; }
+        /* 환자 주의사항 경고 메모박스 */
+        .alert-memo-wrapper { display: flex; align-items: center; gap: 8px; background: #fff5f5; border: 1px solid #feb2b2; border-radius: 6px; padding: 6px 10px; }
+        .alert-label { font-size: 12px; font-weight: bold; color: #c53030; white-space: nowrap; }
+        .alert-memo-wrapper input { border: 1px solid #fc8181; background: #fff; color: #9b2c2c; font-weight: 500; }
+        .alert-memo-wrapper input:focus { border-color: #e53e3e; box-shadow: 0 0 0 2px rgba(229,62,62,0.2); }
+
+        /* 전체 메인 레이아웃 */
+        .main-layout { display: grid; grid-template-columns: 1fr 1.6fr; gap: 15px; margin-bottom: 15px; align-items: start; }
         
-        .btn-edit { background-color: #3182ce; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-bottom: 4px; }
-        .btn-del { background-color: #e53e3e; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; }
-        .vital-badge { background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 4px; display: inline-block; margin-bottom: 2px; }
+        /* 좌측 영역 컨테이너 */
+        .soap-container { display: flex; flex-direction: column; gap: 10px; position: sticky; top: 20px; }
+        
+        /* [고정] 좌측 검색 및 목록 영역 */
+        .left-record-section { background: #f8fafc; border: 1.5px solid #cbd5e0; border-radius: 8px; padding: 10px; max-height: 240px; display: flex; flex-direction: column; }
+        .search-box { display: flex; gap: 6px; margin-bottom: 8px; flex-shrink: 0; }
+        .search-box input { flex: 1; }
+        .search-box button { padding: 0 12px; background-color: #4a5568; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; }
+        
+        .table-responsive-box { overflow-y: auto; flex: 1; border-top: 1px solid #e2e8f0; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 6px 8px; text-align: center; border-bottom: 1px solid #e2e8f0; font-size: 12px; }
+        th { background-color: #edf2f7; color: #2d3748; font-weight: 600; position: sticky; top: 0; z-index: 2; }
+
+        /* 과거 히스토리 토글 박스 스타일 */
+        .history-box { background: #fff; border: 1px solid #cbd5e0; border-radius: 6px; padding: 6px; margin-top: 4px; text-align: left; font-size: 11px; max-height: 140px; overflow-y: auto; display: none; }
+        .history-item { border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px; margin-bottom: 4px; }
+        .history-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        
+        /* 히스토리 내 진단명 컬러 태그 스타일 */
+        .history-badge { display: inline-block; background-color: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8; padding: 1px 5px; border-radius: 4px; font-weight: bold; font-size: 10px; margin-top: 2px; }
+
+        /* 보호자 주호소(S) 다체크 버튼 패널 박스 */
+        .cc-preset-box { background: #ebf8ff; border: 1px solid #90cdf4; border-radius: 6px; padding: 6px; max-height: 100px; overflow-y: auto; }
+        .cc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; }
+        .cc-btn { background: #ffffff; border: 1px solid #bee3f8; border-radius: 4px; padding: 3px 6px; font-size: 11px; text-align: left; cursor: pointer; color: #2b6cb0; font-weight: 500; transition: all 0.15s ease; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cc-btn:hover { background: #c3dafe; border-color: #5a67d8; }
+        .cc-btn.selected { background: #3182ce; color: #ffffff; border-color: #2b6cb0; font-weight: bold; }
+
+        .soap-box { display: flex; flex-direction: column; }
+        .soap-box textarea { height: 65px; resize: vertical; }
+
+        /* 저장/취소 버튼 그룹 */
+        .btn-group { display: flex; gap: 10px; margin-top: 2px; }
+        button.btn-submit { flex: 1; padding: 10px; background-color: #2b6cb0; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; }
+        button.btn-submit:hover { background-color: #2c5282; }
+        button.btn-cancel { width: 90px; padding: 10px; background-color: #718096; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; display: none; }
+
+        /* 우측 12과 패널 그리드 영역 */
+        .right-panels-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        
+        .panel-box { border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 6px; border: 1.5px solid #cbd5e0; box-sizing: border-box; }
+        .panel-title { font-weight: bold; font-size: 12px; text-align: center; margin-bottom: 2px; border-radius: 4px; padding: 5px; color: #ffffff; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+        
+        .panel-content { display: flex; flex-direction: column; gap: 4px; max-height: 180px; overflow-y: auto; }
+        .btn-diagnosis { width: 100%; padding: 6px 4px; background-color: #ffffff; border: 1px solid rgba(0,0,0,0.15); border-radius: 4px; font-weight: 500; cursor: pointer; font-size: 11px; text-align: center; color: #2d3748; transition: all 0.2s; }
+        .btn-diagnosis:hover { font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.15); }
+
+        /* 12과 컬러 테마 */
+        .theme-derma { background-color: #fffaf5; border-color: #f6ad55; } .theme-derma .panel-title { background-color: #dd6b20; } .theme-derma .btn-diagnosis:hover { background-color: #feebc8; border-color: #dd6b20; color: #9c4221; }
+        .theme-gi { background-color: #f0fff4; border-color: #48bb78; } .theme-gi .panel-title { background-color: #2f855a; } .theme-gi .btn-diagnosis:hover { background-color: #c6f6d5; border-color: #2f855a; color: #22543d; }
+        .theme-ophthal { background-color: #ebf8ff; border-color: #3182ce; } .theme-ophthal .panel-title { background-color: #2b6cb0; } .theme-ophthal .btn-diagnosis:hover { background-color: #bee3f8; border-color: #2b6cb0; color: #1a365d; }
+        .theme-ortho { background-color: #fffaf0; border-color: #ed8936; } .theme-ortho .panel-title { background-color: #c05621; } .theme-ortho .btn-diagnosis:hover { background-color: #feebc8; border-color: #c05621; color: #7b341e; }
+        .theme-nephro { background-color: #e6fffa; border-color: #319795; } .theme-nephro .panel-title { background-color: #2c7a7b; } .theme-nephro .btn-diagnosis:hover { background-color: #b2f5ea; border-color: #2c7a7b; color: #134e4a; }
+        .theme-dental { background-color: #faf5ff; border-color: #9f7aea; } .theme-dental .panel-title { background-color: #6b46c1; } .theme-dental .btn-diagnosis:hover { background-color: #e9d5ff; border-color: #6b46c1; color: #553c9a; }
+        .theme-pulmo { background-color: #f0fdf4; border-color: #34d399; } .theme-pulmo .panel-title { background-color: #059669; } .theme-pulmo .btn-diagnosis:hover { background-color: #a7f3d0; border-color: #059669; color: #065f46; }
+        .theme-cardio { background-color: #fff5f5; border-color: #f56565; } .theme-cardio .panel-title { background-color: #e53e3e; } .theme-cardio .btn-diagnosis:hover { background-color: #fed7d7; border-color: #e53e3e; color: #9b2c2c; }
+        .theme-hepato { background-color: #fefcbf; border-color: #d69e2e; } .theme-hepato .panel-title { background-color: #b7791f; } .theme-hepato .btn-diagnosis:hover { background-color: #fef08a; border-color: #b7791f; color: #744210; }
+        .theme-endo { background-color: #fffbeb; border-color: #d97706; } .theme-endo .panel-title { background-color: #b45309; } .theme-endo .btn-diagnosis:hover { background-color: #fde68a; border-color: #b45309; color: #78350f; }
+        .theme-onco { background-color: #f1f5f9; border-color: #64748b; } .theme-onco .panel-title { background-color: #334155; } .theme-onco .btn-diagnosis:hover { background-color: #e2e8f0; border-color: #334155; color: #0f172a; }
+        .theme-neuro { background-color: #eef2ff; border-color: #6366f1; } .theme-neuro .panel-title { background-color: #4f46e5; } .theme-neuro .btn-diagnosis:hover { background-color: #c7d2fe; border-color: #4f46e5; color: #312e81; }
+
+        input[type="text"], textarea { width: 100%; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 6px; box-sizing: border-box; font-size: 13px; }
+        
+        /* ߒᠲx2 칼각 정렬 버튼 스타일 */
+        .action-btns-grid { display: grid; grid-template-columns: repeat(2, 52px); gap: 3px; justify-content: center; margin-bottom: 2px; }
+        .btn-revisit { background-color: #38a169; color: white; border: none; padding: 4px 0; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: bold; text-align: center; }
+        .btn-edit { background-color: #3182ce; color: white; border: none; padding: 4px 0; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: bold; text-align: center; }
+        .btn-del { background-color: #e53e3e; color: white; border: none; padding: 4px 0; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: bold; text-align: center; }
+        .btn-history { background-color: #d69e2e; color: white; border: none; padding: 4px 0; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: bold; width: 107px; text-align: center; display: block; margin: 0 auto; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>🩺 Vet EMR 차트 관리 시스템</h2>
+    <h2>ߩ꠫師公됬맞춤 1클릭 EMR 시스템</h2>
     
-    <div class="section-title">📌 환자 기본정보 및 바이탈 (Vital Signs)</div>
-    <div class="grid-3">
-        <input type="text" id="patientName" placeholder="환자명 *">
-        <input type="text" id="species" placeholder="품종 (예: 토끼, 고양이)">
-        <input type="text" id="weight" placeholder="체중 (kg)">
-        <input type="text" id="temp" placeholder="체온 (°C)">
+    <!-- 환자 기본정보 및 특이사항 입력 구역 -->
+    <div class="patient-info-box">
+        <div class="section-title">ߓ젭阬기본정보 및 바이탈 (Vital Signs)</div>
+        <div class="grid-info">
+            <input type="text" id="patientName" placeholder="환자명 *">
+            <input type="text" id="guardianPhone" placeholder="보호자 핸드폰 번호 (예: 01012345678)" oninput="autoHyphenPhone(this)">
+            
+            <!-- ߒᠭ∬Ⅰ입력칸 + 초간단 1초 퀵선택 버튼 통합 -->
+            <div class="species-container">
+                <input type="text" id="species" placeholder="품종 (직접 입력 또는 아래 선택)">
+                <div class="species-quick-btns">
+                    <button type="button" class="q-btn dog" onclick="setSpecies('말티즈')">ߐ櫧ୋଦ輯button>
+                    <button type="button" class="q-btn dog" onclick="setSpecies('푸들')">ߐ歑諓伯button>
+                    <button type="button" class="q-btn dog" onclick="setSpecies('포메라니안')">ߐ歏쫩伯button>
+                    <button type="button" class="q-btn dog" onclick="setSpecies('비숑')">ߐ櫹䬈Ἧbutton>
+                    <button type="button" class="q-btn dog" onclick="setSpecies('치와와')">ߐ欹謙ଙ༯button>
+                    <button type="button" class="q-btn cat" onclick="setSpecies('페르시안')">ߐ᭎諥䬋쬕輯button>
+                    <button type="button" class="q-btn cat" onclick="setSpecies('코숏')">ߐᬽ䬈Ｏbutton>
+                    <button type="button" class="q-btn cat" onclick="setSpecies('스코티시폴드')">ߐ᭏䫓켯button>
+                    <button type="button" class="q-btn cat" onclick="setSpecies('러시안블루')">ߐ᫟쫸伯button>
+                    <button type="button" class="q-btn cat" onclick="setSpecies('샴')">ߐᬃ伯button>
+                </div>
+            </div>
+
+            <input type="text" id="weight" placeholder="체중 (kg)">
+            <input type="text" id="temp" placeholder="체온 (°C)">
+        </div>
+        
+        <!-- 1인 원장 필수 환자 주의사항 경고 메모박스 -->
+        <div class="alert-memo-wrapper">
+            <span class="alert-label">⚠️ 주의·특이사항:</span>
+            <input type="text" id="alertMemo" placeholder="예: 입질 있음, 극심한 예민, 특정 약물 알러지 (진료 시 항시 노출)">
+        </div>
     </div>
 
-    <div class="section-title">📋 SOAP 진료 기록</div>
-    <div class="grid-soap">
-        <div>
-            <strong>[S] Subjective (주증상/문진)</strong>
-            <textarea id="subjective" placeholder="보호자 호소 증상, 식욕, 배변 상태 등"></textarea>
-        </div>
-        <div>
-            <strong>[O] Objective (검사/신체검사)</strong>
-            <textarea id="objective" placeholder="신체검사, 혈액검사, 방사선 소견 등"></textarea>
-        </div>
-        <div>
-            <strong>[A] Assessment (평가/진단)</strong>
-            <textarea id="assessment" placeholder="추정 진단명, Problem List"></textarea>
-        </div>
-        <div>
-            <strong>[P] Plan (처방/치료계획)</strong>
-            <textarea id="plan" placeholder="투약 처방, 주사, 수술 및 경과관찰 계획"></textarea>
-        </div>
-    </div>
+    <div class="main-layout">
+        
+        <!-- 좌측 영역: 검색/차트목록 + SOAP 진료 기록 및 저장 버튼 통합 -->
+        <div class="soap-container">
+            
+            <!-- 환자 검색 및 지난 차트 조회 영역 -->
+            <div class="left-record-section">
+                <div class="section-title" style="margin-bottom: 4px; flex-shrink: 0;">ߔ�阬검색 및 지난 차트 조회</div>
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="환자명 또는 핸드폰 번호 검색" onkeyup="if(window.event.keyCode==13){fetchRecords()}">
+                    <button onclick="fetchRecords()">검색</button>
+                    <button onclick="clearSearch()" style="background-color: #718096;">전체</button>
+                </div>
+                <div class="table-responsive-box">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 20%;">일시</th>
+                                <th style="width: 26%;">환자/연락처</th>
+                                <th style="width: 32%;">진단(A) 및 요약</th>
+                                <th style="width: 22%;">관리</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recordTable">
+                            <tr><td colspan="4">데이터 로딩 중...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
-    <div class="btn-group">
-        <button class="btn-submit" id="btnSave" onclick="saveRecord()">차트 저장</button>
-        <button class="btn-cancel" id="btnCancel" onclick="cancelEdit()">취소</button>
-    </div>
+            <!-- [S] Subjective 영역 및 주호소 10대 다중선택 패널 -->
+            <div class="soap-box">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                    <span style="font-size:11px; font-weight:bold; color:#2d3748;">[S] Subjective (주증상/문진)</span>
+                    <span style="font-size:10px; color:#4a5568;">ߒᠬ㼭踬挠복수선택 가능</span>
+                </div>
+                
+                <!-- 보호자 주호소 빈도별 10건 슬림 격자 패널 -->
+                <div class="cc-preset-box">
+                    <div class="cc-grid">
+                        <button type="button" class="cc-btn" data-cc="구토" onclick="toggleCC(this)">1. 구토 (Vomiting)</button>
+                        <button type="button" class="cc-btn" data-cc="설사" onclick="toggleCC(this)">2. 설사 (Diarrhea)</button>
+                        <button type="button" class="cc-btn" data-cc="식욕부진" onclick="toggleCC(this)">3. 식욕부진 (Anorexia)</button>
+                        <button type="button" class="cc-btn" data-cc="기력저하" onclick="toggleCC(this)">4. 기력/활력저하 (Lethargy)</button>
+                        <button type="button" class="cc-btn" data-cc="기침/재채기" onclick="toggleCC(this)">5. 기침 및 재채기 (Cough)</button>
+                        <button type="button" class="cc-btn" data-cc="가려움증/긁음" onclick="toggleCC(this)">6. 소루/가려움증 (Pruritus)</button>
+                        <button type="button" class="cc-btn" data-cc="파행/절뚝거림" onclick="toggleCC(this)">7. 파행 및 보행이상 (Lameness)</button>
+                        <button type="button" class="cc-btn" data-cc="혈뇨/배뇨곤란" onclick="toggleCC(this)">8. 혈뇨 및 배뇨곤란 (Dysuria)</button>
+                        <button type="button" class="cc-btn" data-cc="눈곱/안구 통증" onclick="toggleCC(this)">9. 눈곱 및 안구증상 (Ocular)</button>
+                        <button type="button" class="cc-btn" data-cc="귀 가려움/외이염" onclick="toggleCC(this)">10. 이도 소루/발적 (Otitis)</button>
+                    </div>
+                </div>
 
-    <div class="search-box">
-        <input type="text" id="searchInput" placeholder="환자명 검색" onkeyup="if(window.event.keyCode==13){fetchRecords()}">
-        <button onclick="fetchRecords()">검색</button>
-        <button onclick="clearSearch()" style="background-color: #718096;">전체보기</button>
-    </div>
+                <textarea id="subjective" placeholder="상단 버튼을 복수 선택하거나 직접 입력하세요." style="margin-top: 4px;"></textarea>
+            </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th style="width: 14%;">일시</th>
-                <th style="width: 12%;">환자명</th>
-                <th style="width: 18%;">바이탈</th>
-                <th style="width: 44%;">SOAP 진료 내역</th>
-                <th style="width: 12%;">관리</th>
-            </tr>
-        </thead>
-        <tbody id="recordTable">
-            <tr><td colspan="5">데이터 로딩 중...</td></tr>
-        </tbody>
-    </table>
+            <div class="soap-box">
+                <span style="font-size:11px; font-weight:bold; color:#2d3748; margin-bottom:2px;">[O] Objective (검사/신체검사)</span>
+                <textarea id="objective" placeholder="신체검사, 혈액검사, 방사선 소견 등"></textarea>
+            </div>
+            <div class="soap-box">
+                <span style="font-size:11px; font-weight:bold; color:#2d3748; margin-bottom:2px;">[A] Assessment (진단명)</span>
+                <textarea id="assessment" placeholder="우측 과별 버튼을 누르면 진단명이 자동 입력됩니다."></textarea>
+            </div>
+            <div class="soap-box">
+                <span style="font-size:11px; font-weight:bold; color:#2d3748; margin-bottom:2px;">[P] Plan (처방 및 치료계획)</span>
+                <textarea id="plan" placeholder="진단명과 연동된 루틴 처방 세트가 자동으로 함께 입력됩니다."></textarea>
+            </div>
+
+            <!-- 차트 저장/취소 버튼 -->
+            <div class="btn-group">
+                <button class="btn-submit" id="btnSave" onclick="saveRecord()">신규 차트 저장 (새로운 방문)</button>
+                <button class="btn-cancel" id="btnCancel" onclick="cancelEdit()">취소</button>
+            </div>
+        </div>
+
+        <!-- 우측 영역: 다빈도 대표 진단명 & 처방 세트 12과 패널군 -->
+        <div class="right-panels-grid">
+            
+            <!-- 1. 피부과 -->
+            <div class="panel-box theme-derma">
+                <div class="panel-title">1. 피부과</div>
+                <div class="panel-content">
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('외이도염', '[처방] 이도세척 및 항생/항진균 점이액 투여 SID (7일간)')">외이도염</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('피부염', '[처방] 광범위 항생제 + 소염진통제 내복약 BID (5일)')">피부염</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('아토피성 피부염', '[처방] 면역조절제(아포quel 등) + 오메가3 영양제 투여')">아토피성 피부염</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('농피증', '[처방] 적합 항생제 2주 처방 및 소독 샴푸욕 권장')">농피증</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('말라세지아 피부염', '[처방] 항진균제 내복약 + 약용 샴푸 처방')">말라세지아 피부염</button>
+                </div>
+            </div>
+
+            <!-- 2. 소화기 -->
+            <div class="panel-box theme-gi">
+                <div class="panel-title">2. 소화기</div>
+                <div class="panel-content">
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('위장염', '[처방] 위장운동촉진제 + 제산제 + 지사제 3일분 처방')">위장염</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('장염', '[처방] 수액처치 및 정장제 + 항생제 처방, 식이조절 안내')">장염</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('위염', '[처방] 점막보호제 + 위산분비억제제 5일분 처방')">위염</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('대장염', '[처방] 메트로니다졸 + 유산균 정장제 처방')">대장염</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('염증성 장질환 (IBD)', '[처방] 면역억제요법 + 저알러지 처방식 전환')">염증성 장질환</button>
+                </div>
+            </div>
+
+            <!-- 3. 안과 -->
+            <div class="panel-box theme-ophthal">
+                <div class="panel-title">3. 안과</div>
+                <div class="panel-content">
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('결막염', '[처방] 광범위 항생제 안약 4회/일 점안')">결막염</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('각막염', '[처방] 각막 보호제 및 항생 안약 점안, 넥칼라 착용')">각막염</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('각막궤양', '[처방] 혈청 안약 또는 재생 안약 점안, 산대제 투여')">각막궤양</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('건성각결막염 (KCS)', '[처방] 면역조절 안연고(시스포린 등) 지속 점안')">건성각결막염</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('포도막염', '[처방] 소염진통 안약 + 산대제 점안 및 내복약 병행')">포도막염</button>
+                </div>
+            </div>
+
+            <!-- 4. 정형외과 -->
+            <div class="panel-box theme-ortho">
+                <div class="panel-title">4. 정형외과</div>
+                <div class="panel-content">
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('슬개골 탈구', '[처방] 관절영양제 투여 및 체중 조절, 운동 제한 안내')">슬개골 탈구</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('골관절염', '[처방] 비스테로이드성 소염진통제(NSAIDs) + 관절보호제')">골관절염</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('전방십자인대 파열', '[처방] 절대 안정 및 수술적 교정 상담, 소염진통제 처방')">전방십자인대 파열</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('추간판 질환 (IVDD)', '[처방] 소염스테로이드제/소염제 + 케이지 레스트(엄격한 안정)')">추간판 질환</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('고관절 이형성증', '[처방] 체중관리 및 물리치료, 진통소염제 처방')">고관절 이형성증</button>
+                </div>
+            </div>
+
+            <!-- 5. 신장·비뇨기 -->
+            <div class="panel-box theme-nephro">
+                <div class="panel-title">5. 신장·비뇨기</div>
+                <div class="panel-content">
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('방광염', '[처방] 감수성 맞는 항생제 7~10일분 + 처방캔/사료 급여')">방광염</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('요로결석증', '[처방] 수액 처치 및 결석 용해식 처방, 필요시 외과적 제거')">요로결석증</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('만성 신장질환 (CKD)', '[처방] 신장 처방식 + 피하수액(SQ fluid) 및 인 흡착제')">만성 신장질환</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('신우신염', '[처방] 입원 후 강력한 IV 항생제 및 수액 집중 치료')">신우신염</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('급성 신장손상 (AKI)', '[처방] 응급 수액 요법 및 신장 기능 모니터링 입원 치료')">급성 신장손상</button>
+                </div>
+            </div>
+
+            <!-- 6. 치과·구강 -->
+            <div class="panel-box theme-dental">
+                <div class="panel-title">6. 치과·구강</div>
+                <div class="panel-content">
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('치주질환', '[처방] 스케일링 및 치주염 항생제 5일분 처방')">치주질환</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('치은염', '[처방] 소염진통제 투여 및 치아 소독 겔 도포')">치은염</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('구내염', '[처방] 면역조절제 + 진통소염제, 필요시 발치 수술 계획')">구내염</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('치아흡수병변 (FORL)', '[처방] 방사선 촬영 및 환축 치아 발치 수술')">치아흡수병변</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('치근단농양', '[처방] 발치 및 배농 처치 + 광범위 항생제 투여')">치근단농양</button>
+                </div>
+            </div>
+
+            <!-- 7. 호흡기 -->
+            <div class="panel-box theme-pulmo">
+                <div class="panel-title">7. 호흡기</div>
+                <div class="panel-content">
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('상부호흡기감염', '[처방] 항생제 + 거담제 + 식욕촉진제 내복약 처방')">상부호흡기감염</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('기관기관지염', '[처방] 진해거담제 + 기관지 확장제 5일분 처방')">기관기관지염</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('기관허탈', '[처방] 스테로이드/기관지확장제, 흥분 억제 및 하네스 교체')">기관허탈</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('고양이 천식', '[처방] 스테로이드 내복약 또는 흡입기(인할러) 처방')">고양이 천식</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('폐렴', '[처방] 입원 산소방 치료 및 주사 항생제 집중 투여')">폐렴</button>
+                </div>
+            </div>
+
+            <!-- 8. 심장 -->
+            <div class="panel-box theme-cardio">
+                <div class="panel-title">8. 심장</div>
+                <div class="panel-content">
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('점액성 이첨판막변성 (MMVD)', '[처방] ACE억제제 + 이뇨제 + 심근강화제 장기 투약')">이첨판막변성</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('비대성 심근병증 (HCM)', '[처방] 혈전 예방약(항혈소판제) + 심장 안정제 투여')">비대성 심근병증</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('부정맥', '[처방] 항부정맥제 투약 및 정기적 심전도/심초음파 모니터링')">부정맥</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('확장성 심근병증 (DCM)', '[처방] 강심제 + 이뇨제 및 L-카르니틴 등 보조제 처방')">확장성 심근병증</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('심근염', '[처방] 입원 안정 및 항염증 치료, 대증 관리')">심근염</button>
+                </div>
+            </div>
+
+            <!-- 9. 간담도·췌장 -->
+            <div class="panel-box theme-hepato">
+                <div class="panel-title">9. 간담도·췌장</div>
+                <div class="panel-content">
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('췌장염', '[처방] 입원 수액치료 + 진통제 + 항구토제 + 저지방 처방식')">췌장염</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('담낭점액낭종', '[처방] 이담제 및 간장보조제 투약, 정기 초음파 모니터링')">담낭점액낭종</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('담관염', '[처방] 수액 및 항생제, 간 보호제 집중 치료')">담관염</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('간염', '[처방] 고용량 간장보조제(SAMe 등) 및 식이 관리')">간염</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('담석증', '[처방] 이담제 투여 및 외과적 개입 여부 평가')">담석증</button>
+                </div>
+            </div>
+
+            <!-- 10. 내분비 -->
+            <div class="panel-box theme-endo">
+                <div class="panel-title">10. 내분비</div>
+                <div class="panel-content">
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('부신피질기능항진증 (쿠싱)', '[처방] 릴로스탄(Trilostane) 호르몬 조절제 정기 투약')">쿠싱증후군</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('당뇨병 (Diabetes)', '[처방] 인슐린 주사(Vetsulin 등) 아침/저녁 정량 피하 투여')">당뇨병</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('갑상선기능항진증', '[처방] 항갑상선제(메티마졸) 투약 및 호르몬 수치 검사')">갑상선기능항진증</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('갑상선기능저하증', '[처방] 갑상선 호르몬 보충제(Levothyroxine) 평생 투약')">갑상선기능저하증</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('부신피질기능저하증 (애디슨)', '[처방] 호르몬 대체 요법 및 수액/전해질 교정')">애디슨병</button>
+                </div>
+            </div>
+
+            <!-- 11. 종양 -->
+            <div class="panel-box theme-onco">
+                <div class="panel-title">11. 종양</div>
+                <div class="panel-content">
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('유선종양', '[처방] 수술적 절제술(편측/전적출) 및 조직병리검사 의뢰')">유선종양</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('지방종', '[처방] 양성 지방종 확인, 크기 변화 관찰 또는 제거 수술')">지방종</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('피부종양', '[처방] 세포학 검사(FNA) 후 외과적 절제 수술')">피부종양</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('림프종', '[처방] 항암치료(CHOP 프로토콜 등) 또는 대증 완화 케어')">림프종</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('비장종양', '[처방] 비장절제술(Splenectomy) 및 조직검사 계획')">비장종양</button>
+                </div>
+            </div>
+
+            <!-- 12. 신경 -->
+            <div class="panel-box theme-neuro">
+                <div class="panel-title">12. 신경</div>
+                <div class="panel-content">
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('간질 (Epilepsy)', '[처방] 항경련제(페노바비탈 등) 정시 투약 및 발작 일지 작성')">간질/발작</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('전정질환', '[처방] 대증 치료(멀미약/항구토제) 및 수일 내 자연 회복 유도')">전정질환</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('추간판 질환 (IVDD)', '[처방] 신경계 소염제 및 절대 안정, 필요시 정밀 MRI 검토')">추간판 질환</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('뇌염', '[처방] 면역억제성 스테로이드 및 항생/항바이러스 치료')">뇌염</button>
+                    <button type="button" class="btn-diagnosis" onclick="applyPreset('수막염', '[처방] 고용량 스테로이드 및 면역조절제 집중 입원 치료')">수막염</button>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
 </div>
 
 <script>
@@ -97,12 +376,35 @@
     let recordsData = [];
     let editTargetId = null;
 
+    // ߒᠭ∬Ⅰ1초 퀵선택 함수
+    function setSpecies(val) {
+        document.getElementById('species').value = val;
+    }
+
+    // 핸드폰 번호 자동 하이픈 포맷 함수
+    function autoHyphenPhone(target) {
+        let val = target.value.replace(/[^0-9]/g, ''); 
+        if (val.length > 11) val = val.slice(0, 11); 
+
+        if (val.length < 4) {
+            target.value = val;
+        } else if (val.length < 8) {
+            target.value = `${val.slice(0, 3)}-${val.slice(3)}`;
+        } else if (val.length === 8) {
+            target.value = `${val.slice(0, 4)}-${val.slice(4)}`;
+        } else if (val.length < 11) {
+            target.value = `${val.slice(0, 3)}-${val.slice(3, val.length - 4)}-${val.slice(val.length - 4)}`;
+        } else {
+            target.value = `${val.slice(0, 3)}-${val.slice(3, 7)}-${val.slice(7, 11)}`;
+        }
+    }
+
     function formatDate(dateStr) {
         if (!dateStr) return '-';
         const d = new Date(dateStr);
         if (isNaN(d.getTime())) return dateStr;
         const pad = (n) => n.toString().padStart(2, '0');
-        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}<br>${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
     }
 
     async function fetchRecords() {
@@ -116,31 +418,65 @@
             tbody.innerHTML = '';
 
             if (!recordsData || recordsData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5">조회된 진료 기록이 없습니다.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4">조회된 기록이 없습니다.</td></tr>';
                 return;
             }
 
+            const patientHistoryMap = {};
+            recordsData.forEach(row => {
+                const nameKey = (row.patient_name || '').trim();
+                if (!nameKey) return;
+                if (!patientHistoryMap[nameKey]) patientHistoryMap[nameKey] = [];
+                patientHistoryMap[nameKey].push(row);
+            });
+
             recordsData.forEach((row) => {
                 const tr = document.createElement('tr');
-                const weightTxt = row.weight ? `${row.weight}kg` : '-';
-                const tempTxt = row.temp ? `${row.temp}°C` : '-';
+                const phoneTxt = row.guardian_phone ? `<br><span style="color:#4a5568; font-size:10px;">ߓ{row.guardian_phone}</span>` : '';
+                const alertTxt = row.alert_memo ? `<br><span style="color:#e53e3e; font-size:10px; font-weight:bold;">⚠️ ${row.alert_memo}</span>` : '';
                 
+                const pName = (row.patient_name || '').trim();
+                const historyList = patientHistoryMap[pName] || [];
+                const hasMultiple = historyList.length > 1;
+
+                let historyHtml = '';
+                if (hasMultiple) {
+                    historyHtml += `<div id="hist-${row.id}" class="history-box">`;
+                    historyHtml += `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">`;
+                    historyHtml += `<span style="font-weight:bold; color:#2b6cb0;">ߓ⠛${pName}] 역대 내원 히스토리 (${historyList.length}회)</span>`;
+                    historyHtml += `<button onclick="toggleHistory(${row.id})" style="background:#e2e8f0; border:none; border-radius:3px; padding:1px 5px; font-size:10px; cursor:pointer; font-weight:bold; color:#4a5568;">✖ 닫기</button>`;
+                    historyHtml += `</div>`;
+                    
+                    historyList.forEach(h => {
+                        historyHtml += `
+                            <div class="history-item">
+                                <span style="color:#718096; font-weight:bold;">${formatDate(h.created_at)}</span><br>
+                                <span style="color:#2d3748;">진단:</span> <span class="history-badge">${h.assessment || '-'}</span><br>
+                                <span style="color:#4a5568;">처방:</span> <span style="white-space:pre-wrap; color:#4a5568;">${h.plan || '-'}</span>
+                            </div>
+                        `;
+                    });
+                    historyHtml += `</div>`;
+                }
+
+                const historyBtnHtml = hasMultiple ? `<button class="btn-history" onclick="toggleHistory(${row.id})">히스토리 보기 (${historyList.length})</button>` : '';
+
                 tr.innerHTML = `
-                    <td style="font-size:11px; color:#718096; line-height:1.2;">${formatDate(row.created_at)}</td>
-                    <td><strong>${row.patient_name || ''}</strong><br><span style="font-size:11px; color:#718096;">${row.species || ''}</span></td>
-                    <td style="text-align:left;">
-                        <span class="vital-badge">⚖️ ${weightTxt}</span><br>
-                        <span class="vital-badge">🌡️ ${tempTxt}</span>
+                    <td style="font-size:10px; color:#718096; white-space:nowrap;">${formatDate(row.created_at)}</td>
+                    <td style="text-align:left; padding-left:4px;">
+                        <strong>${row.patient_name || ''}</strong> <span style="font-size:10px; color:#718096;">(${row.species || '미입력'})</span>${phoneTxt}${alertTxt}
                     </td>
-                    <td style="text-align:left; font-size:12px; line-height:1.4;">
-                        <div><span class="soap-tag">S:</span> ${row.subjective || '-'}</div>
-                        <div><span class="soap-tag">O:</span> ${row.objective || '-'}</div>
-                        <div><span class="soap-tag">A:</span> ${row.assessment || '-'}</div>
-                        <div><span class="soap-tag">P:</span> ${row.plan || '-'}</div>
+                    <td style="text-align:left; font-size:11px;">
+                        <span style="font-weight:bold; color:#2b6cb0;">${row.assessment || '-'}</span>
+                        ${historyHtml}
                     </td>
-                    <td>
-                        <button class="btn-edit" onclick="startEdit(${row.id})">수정</button><br>
-                        <button class="btn-del" onclick="deleteRecord(${row.id})">삭제</button>
+                    <td style="white-space:nowrap; vertical-align:middle;">
+                        <div class="action-btns-grid">
+                            <button class="btn-revisit" onclick="setRevisit('${row.patient_name || ''}', '${row.guardian_phone || ''}', '${row.species || ''}', '${row.alert_memo || ''}')">재진</button>
+                            <button class="btn-edit" onclick="startEdit(${row.id})">수정</button>
+                            <button class="btn-del" onclick="deleteRecord(${row.id})" style="grid-column: span 2;">삭제</button>
+                        </div>
+                        ${historyBtnHtml}
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -150,18 +486,66 @@
         }
     }
 
+    function toggleHistory(id) {
+        const box = document.getElementById(`hist-${id}`);
+        if (box) {
+            box.style.display = box.style.display === 'block' ? 'none' : 'block';
+        }
+    }
+
+    function toggleCC(btn) {
+        btn.classList.toggle('selected');
+        updateSubjectiveFromCC();
+    }
+
+    function updateSubjectiveFromCC() {
+        const selectedBtns = document.querySelectorAll('.cc-btn.selected');
+        const ccValues = Array.from(selectedBtns).map(b => b.getAttribute('data-cc'));
+        const subjectiveField = document.getElementById('subjective');
+        
+        if (ccValues.length > 0) {
+            subjectiveField.value = "[주호소 복수체크] " + ccValues.join(", ");
+        } else {
+            subjectiveField.value = "";
+        }
+    }
+
     function clearSearch() {
         document.getElementById('searchInput').value = '';
         fetchRecords();
+    }
+
+    function setRevisit(patientName, guardianPhone, species, alertMemo) {
+        editTargetId = null; 
+        document.getElementById('patientName').value = patientName;
+        document.getElementById('guardianPhone').value = guardianPhone;
+        document.getElementById('species').value = species;
+        document.getElementById('alertMemo').value = alertMemo;
+        document.getElementById('weight').value = '';
+        document.getElementById('temp').value = '';
+        document.getElementById('subjective').value = '';
+        document.getElementById('objective').value = '';
+        document.getElementById('assessment').value = '';
+        document.getElementById('plan').value = '';
+        
+        document.querySelectorAll('.cc-btn').forEach(b => b.classList.remove('selected'));
+
+        document.getElementById('btnSave').innerText = '신규 차트 저장 (새로운 방문)';
+        document.getElementById('btnSave').style.backgroundColor = '#2b6cb0';
+        document.getElementById('btnCancel').style.display = 'none';
+
+        document.getElementById('subjective').focus();
     }
 
     function startEdit(id) {
         const target = recordsData.find(r => r.id === id);
         if (!target) return;
 
-        editTargetId = id;
+        editTargetId = id; 
         document.getElementById('patientName').value = target.patient_name || '';
+        document.getElementById('guardianPhone').value = target.guardian_phone || '';
         document.getElementById('species').value = target.species || '';
+        document.getElementById('alertMemo').value = target.alert_memo || '';
         document.getElementById('weight').value = target.weight || '';
         document.getElementById('temp').value = target.temp || '';
         document.getElementById('subjective').value = target.subjective || '';
@@ -169,29 +553,52 @@
         document.getElementById('assessment').value = target.assessment || '';
         document.getElementById('plan').value = target.plan || '';
 
-        document.getElementById('btnSave').innerText = '차트 수정 완료';
-        document.getElementById('btnSave').style.backgroundColor = '#2b6cb0';
+        document.querySelectorAll('.cc-btn').forEach(b => b.classList.remove('selected'));
+
+        document.getElementById('btnSave').innerText = '기존 차트 수정 완료';
+        document.getElementById('btnSave').style.backgroundColor = '#d69e2e';
         document.getElementById('btnCancel').style.display = 'block';
 
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.getElementById('subjective').focus();
     }
 
     function cancelEdit() {
         editTargetId = null;
         clearInputs();
-        document.getElementById('btnSave').innerText = '차트 저장';
+        document.getElementById('btnSave').innerText = '신규 차트 저장 (새로운 방문)';
+        document.getElementById('btnSave').style.backgroundColor = '#2b6cb0';
         document.getElementById('btnCancel').style.display = 'none';
     }
 
     function clearInputs() {
         document.getElementById('patientName').value = '';
+        document.getElementById('guardianPhone').value = '';
         document.getElementById('species').value = '';
+        document.getElementById('alertMemo').value = '';
         document.getElementById('weight').value = '';
         document.getElementById('temp').value = '';
         document.getElementById('subjective').value = '';
         document.getElementById('objective').value = '';
         document.getElementById('assessment').value = '';
         document.getElementById('plan').value = '';
+        document.querySelectorAll('.cc-btn').forEach(b => b.classList.remove('selected'));
+    }
+
+    function applyPreset(diagnosisText, planText) {
+        const assessmentField = document.getElementById('assessment');
+        const planField = document.getElementById('plan');
+
+        if (assessmentField.value) {
+            assessmentField.value += ', ' + diagnosisText;
+        } else {
+            assessmentField.value = diagnosisText;
+        }
+
+        if (planField.value) {
+            planField.value += '\n' + planText;
+        } else {
+            planField.value = planText;
+        }
     }
 
     async function saveRecord() {
@@ -203,7 +610,9 @@
 
         const payload = {
             patient_name: patientName,
+            guardian_phone: document.getElementById('guardianPhone').value.trim(),
             species: document.getElementById('species').value.trim(),
+            alert_memo: document.getElementById('alertMemo').value.trim(),
             weight: document.getElementById('weight').value.trim(),
             temp: document.getElementById('temp').value.trim(),
             subjective: document.getElementById('subjective').value.trim(),
