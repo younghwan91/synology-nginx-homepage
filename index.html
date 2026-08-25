@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>동물병원 EMR 차트 관리</title>
+    <title>동물병원 전문 EMR 차트 관리</title>
     <style>
         body { font-family: 'Noto Sans KR', sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
         .container { max-width: 1400px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
@@ -12,16 +12,8 @@
         
         /* 환자 기본정보 영역 컨테이너 */
         .patient-info-box { background: #f8fafc; border: 1.5px solid #cbd5e0; border-radius: 8px; padding: 12px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px; }
-        .grid-info { display: grid; grid-template-columns: 1.2fr 1.3fr 1.4fr 0.8fr 0.8fr; gap: 10px; }
+        .grid-info { display: grid; grid-template-columns: 1.2fr 1.3fr 1.2fr 0.8fr 0.8fr; gap: 10px; }
         
-        /* ߒᠭ∬Ⅰ영역 및 1초 퀵선택 버튼 스타일 */
-        .species-container { display: flex; flex-direction: column; gap: 4px; }
-        .species-quick-btns { display: flex; gap: 2px; flex-wrap: wrap; }
-        .q-btn { background: #edf2f7; border: 1px solid #cbd5e0; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer; color: #2d3748; font-weight: 500; }
-        .q-btn:hover { background: #e2e8f0; border-color: #a0aec0; }
-        .q-btn.dog { background: #ebf8ff; color: #2b6cb0; border-color: #bee3f8; }
-        .q-btn.cat { background: #fffaf0; color: #dd6b20; border-color: #feebc8; }
-
         /* 환자 주의사항 경고 메모박스 */
         .alert-memo-wrapper { display: flex; align-items: center; gap: 8px; background: #fff5f5; border: 1px solid #feb2b2; border-radius: 6px; padding: 6px 10px; }
         .alert-label { font-size: 12px; font-weight: bold; color: #c53030; white-space: nowrap; }
@@ -95,7 +87,7 @@
 
         input[type="text"], textarea { width: 100%; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 6px; box-sizing: border-box; font-size: 13px; }
         
-        /* ߒᠲx2 칼각 정렬 버튼 스타일 */
+        /* 💡 2x2 칼각 정렬 버튼 스타일 */
         .action-btns-grid { display: grid; grid-template-columns: repeat(2, 52px); gap: 3px; justify-content: center; margin-bottom: 2px; }
         .btn-revisit { background-color: #38a169; color: white; border: none; padding: 4px 0; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: bold; text-align: center; }
         .btn-edit { background-color: #3182ce; color: white; border: none; padding: 4px 0; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: bold; text-align: center; }
@@ -106,36 +98,18 @@
 <body>
 
 <div class="container">
-    <h2>동물병원 EMR 시스템</h2>
+    <h2>🩺 노땅원장 맞춤 1클릭 EMR 시스템</h2>
     
     <!-- 환자 기본정보 및 특이사항 입력 구역 -->
     <div class="patient-info-box">
-        <div class="section-title">ߓ젭阬기본정보 및 바이탈 (Vital Signs)</div>
+        <div class="section-title">📌 환자 기본정보 및 바이탈 (Vital Signs)</div>
         <div class="grid-info">
             <input type="text" id="patientName" placeholder="환자명 *">
             <input type="text" id="guardianPhone" placeholder="보호자 핸드폰 번호 (예: 01012345678)" oninput="autoHyphenPhone(this)">
-            
-            <!-- ߒᠭ∬Ⅰ입력칸 + 초간단 1초 퀵선택 버튼 통합 -->
-            <div class="species-container">
-                <input type="text" id="species" placeholder="품종 (직접 입력 또는 아래 선택)">
-                <div class="species-quick-btns">
-                    <button type="button" class="q-btn dog" onclick="setSpecies('말티즈')">ߐ櫧ୋଦ輯button>
-                    <button type="button" class="q-btn dog" onclick="setSpecies('푸들')">ߐ歑諓伯button>
-                    <button type="button" class="q-btn dog" onclick="setSpecies('포메라니안')">ߐ歏쫩伯button>
-                    <button type="button" class="q-btn dog" onclick="setSpecies('비숑')">ߐ櫹䬈Ἧbutton>
-                    <button type="button" class="q-btn dog" onclick="setSpecies('치와와')">ߐ欹謙ଙ༯button>
-                    <button type="button" class="q-btn cat" onclick="setSpecies('페르시안')">ߐ᭎諥䬋쬕輯button>
-                    <button type="button" class="q-btn cat" onclick="setSpecies('코숏')">ߐᬽ䬈Ｏbutton>
-                    <button type="button" class="q-btn cat" onclick="setSpecies('스코티시폴드')">ߐ᭏䫓켯button>
-                    <button type="button" class="q-btn cat" onclick="setSpecies('러시안블루')">ߐ᫟쫸伯button>
-                    <button type="button" class="q-btn cat" onclick="setSpecies('샴')">ߐᬃ伯button>
-                </div>
-            </div>
-
+            <input type="text" id="species" placeholder="품종 (예: 토끼, 고양이)">
             <input type="text" id="weight" placeholder="체중 (kg)">
             <input type="text" id="temp" placeholder="체온 (°C)">
         </div>
-        
         <!-- 1인 원장 필수 환자 주의사항 경고 메모박스 -->
         <div class="alert-memo-wrapper">
             <span class="alert-label">⚠️ 주의·특이사항:</span>
@@ -150,7 +124,7 @@
             
             <!-- 환자 검색 및 지난 차트 조회 영역 -->
             <div class="left-record-section">
-                <div class="section-title" style="margin-bottom: 4px; flex-shrink: 0;">ߔ�阬검색 및 지난 차트 조회</div>
+                <div class="section-title" style="margin-bottom: 4px; flex-shrink: 0;">🔍 환자 검색 및 지난 차트 조회</div>
                 <div class="search-box">
                     <input type="text" id="searchInput" placeholder="환자명 또는 핸드폰 번호 검색" onkeyup="if(window.event.keyCode==13){fetchRecords()}">
                     <button onclick="fetchRecords()">검색</button>
@@ -177,7 +151,7 @@
             <div class="soap-box">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
                     <span style="font-size:11px; font-weight:bold; color:#2d3748;">[S] Subjective (주증상/문진)</span>
-                    <span style="font-size:10px; color:#4a5568;">ߒᠬ㼭踬挠복수선택 가능</span>
+                    <span style="font-size:10px; color:#4a5568;">💡 주호소 복수선택 가능</span>
                 </div>
                 
                 <!-- 보호자 주호소 빈도별 10건 슬림 격자 패널 -->
@@ -376,21 +350,17 @@
     let recordsData = [];
     let editTargetId = null;
 
-    // ߒᠭ∬Ⅰ1초 퀵선택 함수
-    function setSpecies(val) {
-        document.getElementById('species').value = val;
-    }
-
-    // 핸드폰 번호 자동 하이픈 포맷 함수
+    // 💡 핸드폰 번호 자동 하이픈 포맷 함수
     function autoHyphenPhone(target) {
-        let val = target.value.replace(/[^0-9]/g, ''); 
-        if (val.length > 11) val = val.slice(0, 11); 
+        let val = target.value.replace(/[^0-9]/g, ''); // 숫자 외 문자 제거
+        if (val.length > 11) val = val.slice(0, 11); // 최대 11자리 제한
 
         if (val.length < 4) {
             target.value = val;
         } else if (val.length < 8) {
             target.value = `${val.slice(0, 3)}-${val.slice(3)}`;
         } else if (val.length === 8) {
+            // 8자리 번호 예외 처리 (예: 1588-1588 등)
             target.value = `${val.slice(0, 4)}-${val.slice(4)}`;
         } else if (val.length < 11) {
             target.value = `${val.slice(0, 3)}-${val.slice(3, val.length - 4)}-${val.slice(val.length - 4)}`;
@@ -432,7 +402,7 @@
 
             recordsData.forEach((row) => {
                 const tr = document.createElement('tr');
-                const phoneTxt = row.guardian_phone ? `<br><span style="color:#4a5568; font-size:10px;">ߓ{row.guardian_phone}</span>` : '';
+                const phoneTxt = row.guardian_phone ? `<br><span style="color:#4a5568; font-size:10px;">📞 ${row.guardian_phone}</span>` : '';
                 const alertTxt = row.alert_memo ? `<br><span style="color:#e53e3e; font-size:10px; font-weight:bold;">⚠️ ${row.alert_memo}</span>` : '';
                 
                 const pName = (row.patient_name || '').trim();
@@ -443,7 +413,7 @@
                 if (hasMultiple) {
                     historyHtml += `<div id="hist-${row.id}" class="history-box">`;
                     historyHtml += `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">`;
-                    historyHtml += `<span style="font-weight:bold; color:#2b6cb0;">ߓ⠛${pName}] 역대 내원 히스토리 (${historyList.length}회)</span>`;
+                    historyHtml += `<span style="font-weight:bold; color:#2b6cb0;">📂 [${pName}] 역대 내원 히스토리 (${historyList.length}회)</span>`;
                     historyHtml += `<button onclick="toggleHistory(${row.id})" style="background:#e2e8f0; border:none; border-radius:3px; padding:1px 5px; font-size:10px; cursor:pointer; font-weight:bold; color:#4a5568;">✖ 닫기</button>`;
                     historyHtml += `</div>`;
                     
