@@ -350,6 +350,16 @@
     let recordsData = [];
     let editTargetId = null;
 
+    // 사용자 입력은 항상 이스케이프해서 innerHTML 에 넣는다.
+    function esc(v) {
+        return String(v == null ? '' : v)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
     // 💡 핸드폰 번호 자동 하이픈 포맷 함수
     function autoHyphenPhone(target) {
         let val = target.value.replace(/[^0-9]/g, ''); // 숫자 외 문자 제거
@@ -392,63 +402,37 @@
                 return;
             }
 
-            const patientHistoryMap = {};
-            recordsData.forEach(row => {
-                const nameKey = (row.patient_name || '').trim();
-                if (!nameKey) return;
-                if (!patientHistoryMap[nameKey]) patientHistoryMap[nameKey] = [];
-                patientHistoryMap[nameKey].push(row);
-            });
-
             recordsData.forEach((row) => {
                 const tr = document.createElement('tr');
-                const phoneTxt = row.guardian_phone ? `<br><span style="color:#4a5568; font-size:10px;">📞 ${row.guardian_phone}</span>` : '';
-                const alertTxt = row.alert_memo ? `<br><span style="color:#e53e3e; font-size:10px; font-weight:bold;">⚠️ ${row.alert_memo}</span>` : '';
-                
-                const pName = (row.patient_name || '').trim();
-                const historyList = patientHistoryMap[pName] || [];
-                const hasMultiple = historyList.length > 1;
-
-                let historyHtml = '';
-                if (hasMultiple) {
-                    historyHtml += `<div id="hist-${row.id}" class="history-box">`;
-                    historyHtml += `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">`;
-                    historyHtml += `<span style="font-weight:bold; color:#2b6cb0;">📂 [${pName}] 역대 내원 히스토리 (${historyList.length}회)</span>`;
-                    historyHtml += `<button onclick="toggleHistory(${row.id})" style="background:#e2e8f0; border:none; border-radius:3px; padding:1px 5px; font-size:10px; cursor:pointer; font-weight:bold; color:#4a5568;">✖ 닫기</button>`;
-                    historyHtml += `</div>`;
-                    
-                    historyList.forEach(h => {
-                        historyHtml += `
-                            <div class="history-item">
-                                <span style="color:#718096; font-weight:bold;">${formatDate(h.created_at)}</span><br>
-                                <span style="color:#2d3748;">진단:</span> <span class="history-badge">${h.assessment || '-'}</span><br>
-                                <span style="color:#4a5568;">처방:</span> <span style="white-space:pre-wrap; color:#4a5568;">${h.plan || '-'}</span>
-                            </div>
-                        `;
-                    });
-                    historyHtml += `</div>`;
-                }
-
-                const historyBtnHtml = hasMultiple ? `<button class="btn-history" onclick="toggleHistory(${row.id})">히스토리 보기 (${historyList.length})</button>` : '';
+                const phoneTxt = row.guardian_phone
+                    ? `<br><span style="color:#4a5568; font-size:10px;">\uD83D\uDCDE ${esc(row.guardian_phone)}</span>` : '';
+                const alertTxt = row.alert_memo
+                    ? `<br><span style="color:#e53e3e; font-size:10px; font-weight:bold;">\u26A0\uFE0F ${esc(row.alert_memo)}</span>` : '';
 
                 tr.innerHTML = `
-                    <td style="font-size:10px; color:#718096; white-space:nowrap;">${formatDate(row.created_at)}</td>
+                    <td style="font-size:10px; color:#718096; white-space:nowrap;">${esc(formatDate(row.created_at))}</td>
                     <td style="text-align:left; padding-left:4px;">
-                        <strong>${row.patient_name || ''}</strong> <span style="font-size:10px; color:#718096;">(${row.species || '미입력'})</span>${phoneTxt}${alertTxt}
+                        <strong>${esc(row.patient_name)}</strong> <span style="font-size:10px; color:#718096;">(${esc(row.species || '\uBBF8\uC785\uB825')})</span>${phoneTxt}${alertTxt}
                     </td>
                     <td style="text-align:left; font-size:11px;">
-                        <span style="font-weight:bold; color:#2b6cb0;">${row.assessment || '-'}</span>
-                        ${historyHtml}
+                        <span style="font-weight:bold; color:#2b6cb0;">${esc(row.assessment || '-')}</span>
+                        <div id="hist-${row.id}" class="history-box"></div>
                     </td>
                     <td style="white-space:nowrap; vertical-align:middle;">
                         <div class="action-btns-grid">
-                            <button class="btn-revisit" onclick="setRevisit('${row.patient_name || ''}', '${row.guardian_phone || ''}', '${row.species || ''}', '${row.alert_memo || ''}')">재진</button>
-                            <button class="btn-edit" onclick="startEdit(${row.id})">수정</button>
-                            <button class="btn-del" onclick="deleteRecord(${row.id})" style="grid-column: span 2;">삭제</button>
+                            <button class="btn-revisit" data-act="revisit">\uC7AC\uC9C4</button>
+                            <button class="btn-edit" data-act="edit">\uC218\uC815</button>
+                            <button class="btn-del" data-act="del" style="grid-column: span 2;">\uC0AD\uC81C</button>
                         </div>
-                        ${historyBtnHtml}
+                        <button class="btn-history" data-act="hist">\uD788\uC2A4\uD1A0\uB9AC \uBCF4\uAE30</button>
                     </td>
                 `;
+                // 인라인 onclick 문자열 보간은 따옴표가 든 이름에서 깨지므로 리스너로 바인딩한다.
+                tr.querySelector('[data-act="revisit"]').addEventListener('click', () => setRevisit(row.id));
+                tr.querySelector('[data-act="edit"]').addEventListener('click', () => startEdit(row.id));
+                tr.querySelector('[data-act="del"]').addEventListener('click', () => deleteRecord(row.id));
+                tr.querySelector('[data-act="hist"]').addEventListener('click', () => toggleHistory(row.id, row.patient_id));
+
                 tbody.appendChild(tr);
             });
         } catch (e) {
@@ -456,10 +440,42 @@
         }
     }
 
-    function toggleHistory(id) {
+    async function toggleHistory(id, patientId) {
         const box = document.getElementById(`hist-${id}`);
-        if (box) {
-            box.style.display = box.style.display === 'block' ? 'none' : 'block';
+        if (!box) return;
+        if (box.style.display === 'block') {
+            box.style.display = 'none';
+            return;
+        }
+
+        box.style.display = 'block';
+        box.innerHTML = '\uBD88\uB7EC\uC624\uB294 \uC911...';
+        try {
+            const res = await fetch(`/api/patients/${patientId}/records`);
+            const history = await res.json();
+            if (!Array.isArray(history) || history.length === 0) {
+                box.innerHTML = '\uC774\uC804 \uB0B4\uC6D0 \uAE30\uB85D\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.';
+                return;
+            }
+
+            const pName = esc(history[0].patient_name);
+            let html = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">`;
+            html += `<span style="font-weight:bold; color:#2b6cb0;">\uD83D\uDCC2 [${pName}] \uC5ED\uB300 \uB0B4\uC6D0 \uD788\uC2A4\uD1A0\uB9AC (${history.length}\uD68C)</span>`;
+            html += `<button data-act="close" style="background:#e2e8f0; border:none; border-radius:3px; padding:1px 5px; font-size:10px; cursor:pointer; font-weight:bold; color:#4a5568;">\u2716 \uB2EB\uAE30</button>`;
+            html += `</div>`;
+            history.forEach(h => {
+                html += `
+                    <div class="history-item">
+                        <span style="color:#718096; font-weight:bold;">${esc(formatDate(h.created_at))}</span><br>
+                        <span style="color:#2d3748;">\uC9C4\uB2E8:</span> <span class="history-badge">${esc(h.assessment || '-')}</span><br>
+                        <span style="color:#4a5568;">\uCC98\uBC29:</span> <span style="white-space:pre-wrap; color:#4a5568;">${esc(h.plan || '-')}</span>
+                    </div>
+                `;
+            });
+            box.innerHTML = html;
+            box.querySelector('[data-act="close"]').addEventListener('click', () => { box.style.display = 'none'; });
+        } catch (e) {
+            box.innerHTML = '\uD788\uC2A4\uD1A0\uB9AC\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.';
         }
     }
 
@@ -485,25 +501,20 @@
         fetchRecords();
     }
 
-    function setRevisit(patientName, guardianPhone, species, alertMemo) {
-        editTargetId = null; 
-        document.getElementById('patientName').value = patientName;
-        document.getElementById('guardianPhone').value = guardianPhone;
-        document.getElementById('species').value = species;
-        document.getElementById('alertMemo').value = alertMemo;
-        document.getElementById('weight').value = '';
-        document.getElementById('temp').value = '';
-        document.getElementById('subjective').value = '';
-        document.getElementById('objective').value = '';
-        document.getElementById('assessment').value = '';
-        document.getElementById('plan').value = '';
-        
-        document.querySelectorAll('.cc-btn').forEach(b => b.classList.remove('selected'));
+    function setRevisit(id) {
+        const target = recordsData.find(r => r.id === id);
+        if (!target) return;
 
-        document.getElementById('btnSave').innerText = '신규 차트 저장 (새로운 방문)';
+        editTargetId = null;
+        clearInputs();
+        document.getElementById('patientName').value = target.patient_name || '';
+        document.getElementById('guardianPhone').value = target.guardian_phone || '';
+        document.getElementById('species').value = target.species || '';
+        document.getElementById('alertMemo').value = target.alert_memo || '';
+
+        document.getElementById('btnSave').innerText = '\uC2E0\uADDC \uCC28\uD2B8 \uC800\uC7A5 (\uC0C8\uB85C\uC6B4 \uBC29\uBB38)';
         document.getElementById('btnSave').style.backgroundColor = '#2b6cb0';
         document.getElementById('btnCancel').style.display = 'none';
-
         document.getElementById('subjective').focus();
     }
 
